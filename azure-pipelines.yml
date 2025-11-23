@@ -1,0 +1,44 @@
+trigger:
+- main
+
+pool:
+  name: new-pool   # your self-hosted agent pool
+
+steps:
+
+# Install Node.js 24 LTS
+- task: NodeTool@0
+  inputs:
+    versionSpec: '24.x'
+  displayName: 'Install Node.js 24 LTS'
+
+# Install npm packages
+- script: |
+    npm install
+  displayName: 'Install Dependencies'
+
+# Archive files
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: "$(System.DefaultWorkingDirectory)"
+    includeRootFolder: false
+    archiveType: "zip"
+    archiveFile: "$(Build.ArtifactStagingDirectory)/app.zip"
+    replaceExistingArchive: true
+  displayName: 'Create ZIP Artifact'
+
+# Publish artifact
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+    ArtifactName: "drop"
+    publishLocation: "Container"
+  displayName: "Publish Artifact"
+
+# Deploy to Azure App Service
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: "app-deloy"
+    appName: "atharva-lego"
+    package: "$(Build.ArtifactStagingDirectory)/app.zip"
+  displayName: "Deploy to Azure App Service"
